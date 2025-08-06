@@ -68,7 +68,7 @@ io.on('connection', (socket) => {
 // messageQueue.process(); // This is now called in initializeServices()
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
+server.listen(PORT,'0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Open http://localhost:${PORT} to scan QR code`);
 });

@@ -14,7 +14,18 @@ Content-Type: application/json
 
 {
     "apiKey": "tes123",
-    "groupId": "120363346752348557",
+    "groupId": "120363169750068863",
+    "message": "Halo, ini adalah pesan grup."
+}
+
+###
+
+POST http://10.0.108.248:3000/api/send-group
+Content-Type: application/json
+
+{
+    "apiKey": "tes123",
+    "groupId": "120363169750068863",
     "message": "Halo, ini adalah pesan grup."
 }
 
