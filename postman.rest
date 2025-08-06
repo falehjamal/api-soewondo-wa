@@ -2,7 +2,7 @@ POST http://localhost:3000/api/send-private
 Content-Type: application/json
 
 {
-    "apiKey": "tes123",
+    "apiKey": "rahasia",
     "number": "6285281411550",
     "message": "Halo, ini adalah pesan pribadi."
 }
@@ -13,10 +13,21 @@ POST http://localhost:3000/api/send-group
 Content-Type: application/json
 
 {
-    "apiKey": "tes123",
-    "groupId": "120363169750068863",
+    "apiKey": "rahasia",
+    "groupId": "120363403933067028",
     "message": "Halo, ini adalah pesan grup."
 }
+
+###
+POST http://10.0.108.248:3000/api/send-private
+Content-Type: application/json
+
+{
+    "apiKey": "tes123",
+    "number": "6285281411550",
+    "message": "Halo, ini adalah pesan pribadi."
+}
+
 
 ###
 
