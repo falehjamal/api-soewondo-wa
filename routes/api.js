@@ -50,10 +50,10 @@ module.exports = (whatsappService, messageQueue) => {
     });
   });
 
-  // Disconnect WhatsApp
+  // Disconnect WhatsApp and clear session
   router.post('/disconnect', async (req, res) => {
     try {
-      await whatsappService.disconnect();
+      await whatsappService.logout();
       res.json({
         success: true,
         message: 'WhatsApp disconnected successfully'
