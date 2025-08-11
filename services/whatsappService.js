@@ -63,6 +63,7 @@ class WhatsAppService {
           // Check if it's a 401 error (session expired)
           if (lastDisconnect?.error?.output?.statusCode === 401) {
             console.log('Session expired, clearing auth and starting fresh...');
+
             this.clearAuth();
             setTimeout(() => this.connect(), 5000);
           } else if (shouldReconnect) {
