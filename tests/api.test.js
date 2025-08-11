@@ -8,6 +8,7 @@ describe('API endpoints', () => {
   let messageQueue;
 
   beforeEach(() => {
+    delete process.env.DELAY_QUEUE;
     whatsappService = {
       getConnectionStatus: jest.fn().mockReturnValue('connected'),
       dbService: {
@@ -51,10 +52,11 @@ describe('API endpoints', () => {
     );
   });
 
-  test('POST /api/send-private queues message with custom delay', async () => {
+  test('POST /api/send-private uses DELAY_QUEUE env variable', async () => {
+    process.env.DELAY_QUEUE = '2000';
     const res = await request(app)
       .post('/api/send-private')
-      .send({ apiKey: 'key', number: '123', message: 'hi', delay: 2000 });
+      .send({ apiKey: 'key', number: '123', message: 'hi' });
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.message).toBe('Private message queued successfully');
@@ -82,10 +84,11 @@ describe('API endpoints', () => {
     );
   });
 
-  test('POST /api/send-group queues message with custom delay', async () => {
+  test('POST /api/send-group uses DELAY_QUEUE env variable', async () => {
+    process.env.DELAY_QUEUE = '2000';
     const res = await request(app)
       .post('/api/send-group')
-      .send({ apiKey: 'key', groupId: 'group1', message: 'hi', delay: 2000 });
+      .send({ apiKey: 'key', groupId: 'group1', message: 'hi' });
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.message).toBe('Group message queued successfully');
