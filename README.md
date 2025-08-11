@@ -190,6 +190,15 @@ Jika Redis tidak tersedia, bot akan otomatis menggunakan in-memory processing.
 
 ## 🧪 Testing API
 
+### Unit Tests
+
+Untuk menjalankan pengujian otomatis:
+```bash
+npm test
+```
+
+### Manual API Testing
+
 Untuk test API, jalankan:
 ```bash
 # Install axios untuk testing
