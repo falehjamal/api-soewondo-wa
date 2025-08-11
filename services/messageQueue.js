@@ -101,20 +101,21 @@ class MessageQueue {
     }
 
     try {
-      // Clean data to avoid circular references
+      const delay = data.delay !== undefined ? data.delay : (parseInt(process.env.DELAY_QUEUE) || 500);
+
+      // Clean data to avoid circular references and include delay info
       const cleanData = {
         number: data.number,
         message: data.message,
-        messageId: data.messageId
+        messageId: data.messageId,
+        delay
       };
 
-      const job = await this.privateMessageQueue.add('send-private-message', cleanData, {
-        delay: data.delay !== undefined ? data.delay : (parseInt(process.env.DELAY_QUEUE) || 500)
-      });
+      const job = await this.privateMessageQueue.add('send-private-message', cleanData);
       return { jobId: job.id };
     } catch (error) {
       console.error('Error adding private message to queue:', error);
-      return this.processInMemory('private', data);
+      return this.processInMemory('private', { ...data, delay });
     }
   }
 
@@ -136,20 +137,21 @@ class MessageQueue {
     }
 
     try {
-      // Clean data to avoid circular references
+      const delay = data.delay !== undefined ? data.delay : (parseInt(process.env.DELAY_QUEUE) || 500);
+
+      // Clean data to avoid circular references and include delay info
       const cleanData = {
         groupId: data.groupId,
         message: data.message,
-        messageId: data.messageId
+        messageId: data.messageId,
+        delay
       };
 
-      const job = await this.groupMessageQueue.add('send-group-message', cleanData, {
-        delay: data.delay !== undefined ? data.delay : (parseInt(process.env.DELAY_QUEUE) || 500)
-      });
+      const job = await this.groupMessageQueue.add('send-group-message', cleanData);
       return { jobId: job.id };
     } catch (error) {
       console.error('Error adding group message to queue:', error);
-      return this.processInMemory('group', data);
+      return this.processInMemory('group', { ...data, delay });
     }
   }
 
@@ -205,58 +207,66 @@ class MessageQueue {
 
     // Process private messages
     this.privateMessageQueue.process('send-private-message', 1, async (job) => {
-      const { number, message, messageId } = job.data;
-      
+      const { number, message, messageId, delay } = job.data;
+
       try {
+        // Respect per-message delay or default environment setting
+        const waitTime = delay !== undefined ? delay : (parseInt(process.env.DELAY_QUEUE) || 500);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+
         // Get services from the main app context
         if (!this.whatsappService) {
           throw new Error('WhatsApp service not available');
         }
-        
+
         await this.whatsappService.sendPrivateMessage(number, message);
-        
+
         if (messageId && this.dbService) {
           await this.dbService.updateMessageStatus(messageId, 'sent');
         }
-        
+
         console.log(`Private message sent to ${number}`);
         return { success: true };
       } catch (error) {
         console.error(`Error sending private message to ${number}:`, error);
-        
+
         if (messageId && this.dbService) {
           await this.dbService.updateMessageStatus(messageId, 'failed');
         }
-        
+
         throw error;
       }
     });
 
     // Process group messages
     this.groupMessageQueue.process('send-group-message', 1, async (job) => {
-      const { groupId, message, messageId } = job.data;
-      
+      const { groupId, message, messageId, delay } = job.data;
+
       try {
+        // Respect per-message delay or default environment setting
+        const waitTime = delay !== undefined ? delay : (parseInt(process.env.DELAY_QUEUE) || 500);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+
         // Get services from the main app context
         if (!this.whatsappService) {
           throw new Error('WhatsApp service not available');
         }
-        
+
         await this.whatsappService.sendGroupMessage(groupId, message);
-        
+
         if (messageId && this.dbService) {
           await this.dbService.updateMessageStatus(messageId, 'sent');
         }
-        
+
         console.log(`Group message sent to ${groupId}`);
         return { success: true };
       } catch (error) {
         console.error(`Error sending group message to ${groupId}:`, error);
-        
+
         if (messageId && this.dbService) {
           await this.dbService.updateMessageStatus(messageId, 'failed');
         }
-        
+
         throw error;
       }
     });
