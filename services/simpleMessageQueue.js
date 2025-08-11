@@ -12,9 +12,11 @@ class SimpleMessageQueue {
   }
 
   async addPrivateMessage(data) {
+    const { delay = 500, ...rest } = data;
     this.queue.push({
       type: 'private',
-      data: data,
+      data: rest,
+      delay,
       timestamp: Date.now()
     });
 
@@ -26,9 +28,11 @@ class SimpleMessageQueue {
   }
 
   async addGroupMessage(data) {
+    const { delay = 500, ...rest } = data;
     this.queue.push({
       type: 'group',
-      data: data,
+      data: rest,
+      delay,
       timestamp: Date.now()
     });
 
@@ -51,7 +55,7 @@ class SimpleMessageQueue {
       
       try {
         // Add delay to prevent spam
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, item.delay));
 
         if (item.type === 'private') {
           await this.sendPrivateMessage(item.data);

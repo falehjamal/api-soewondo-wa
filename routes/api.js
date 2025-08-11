@@ -1,7 +1,7 @@
 const express = require('express');
-const router = express.Router();
 
 module.exports = (whatsappService, messageQueue) => {
+  const router = express.Router();
   // Middleware to validate API key
   const validateApiKey = async (req, res, next) => {
     const apiKey = req.body.apiKey || req.headers['x-api-key'];
@@ -69,7 +69,7 @@ module.exports = (whatsappService, messageQueue) => {
 
   // Send private message
   router.post('/send-private', validateApiKey, async (req, res) => {
-    const { number, message } = req.body;
+    const { number, message, delay } = req.body;
 
     if (!number || !message) {
       return res.status(400).json({
@@ -91,7 +91,8 @@ module.exports = (whatsappService, messageQueue) => {
       const result = await messageQueue.addPrivateMessage({
         number,
         message,
-        messageId
+        messageId,
+        delay: parseInt(delay) || 500
       });
 
       res.json({
@@ -114,7 +115,7 @@ module.exports = (whatsappService, messageQueue) => {
 
   // Send group message
   router.post('/send-group', validateApiKey, async (req, res) => {
-    const { groupId, message } = req.body;
+    const { groupId, message, delay } = req.body;
 
     if (!groupId || !message) {
       return res.status(400).json({
@@ -136,7 +137,8 @@ module.exports = (whatsappService, messageQueue) => {
       const result = await messageQueue.addGroupMessage({
         groupId,
         message,
-        messageId
+        messageId,
+        delay: parseInt(delay) || 500
       });
 
       res.json({

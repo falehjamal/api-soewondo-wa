@@ -48,6 +48,10 @@ Buka `http://localhost:PORT` untuk memindai QR dan menghubungkan akun WhatsApp.
 | GET    | `/api/messages`    | Riwayat pesan (butuh API key, opsi `limit`) |
 | GET    | `/api/queue-stats` | Statistik antrean pesan (butuh API key) |
 
+`send-private` dan `send-group` mendukung parameter opsional `delay` dalam milidetik
+untuk mengatur jeda eksekusi pesan pada antrean. Jika tidak diberikan, nilai
+default adalah `500` ms.
+
 ## Testing
 ```bash
 npm test
