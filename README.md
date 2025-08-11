@@ -7,7 +7,7 @@ Bot WhatsApp yang dibangun dengan teknologi modern untuk pengiriman pesan yang s
 - **QR Code Scanner**: Interface web untuk scan QR code WhatsApp
 - **API Endpoints**: REST API untuk mengirim pesan pribadi dan grup
 - **Auto-Reply Features**: Bot otomatis membalas pesan dengan keyword tertentu
-- **Redis Queue**: Queue system untuk pengiriman pesan yang reliable
+- **Queue System**: Mendukung Redis Bull Queue atau simple in-memory queue
 - **SQLite Database**: Penyimpanan session dan log pesan
 - **Real-time Updates**: WebSocket untuk update status real-time
 
@@ -130,13 +130,11 @@ Bot menggunakan SQLite dengan tabel:
 
 ## 🔄 Queue System
 
-Bot menggunakan Redis Bull Queue untuk:
-- Mencegah spam pesan
-- Retry otomatis jika gagal
-- Scalable message processing
-- Background job processing
+Project menyediakan dua implementasi antrian pesan:
+- **Redis Bull Queue (`messageQueue.js`)** – cocok untuk skala besar dengan retry otomatis, backoff, dan monitoring.
+- **In-memory Queue (`simpleMessageQueue.js`)** – antrian ringan tanpa dependensi eksternal, hanya berjalan pada satu instance dan tidak persisten.
 
-**Fitur Queue:**
+**Fitur Queue (Redis):**
 - Automatic retry (3x attempts)
 - Exponential backoff delay
 - Job prioritization
@@ -218,9 +216,10 @@ bot-wa-new/
 ├── index.js              # Main server file
 ├── package.json          # Dependencies
 ├── services/
-│   ├── whatsappService.js # WhatsApp connection logic
-│   ├── databaseService.js # SQLite database operations
-│   └── messageQueue.js    # Redis queue management
+│   ├── whatsappService.js     # WhatsApp connection logic
+│   ├── databaseService.js     # SQLite database operations
+│   ├── simpleMessageQueue.js  # In-memory queue management (default)
+│   └── messageQueue.js        # Redis/Bull queue (legacy)
 ├── routes/
 │   └── api.js            # API route handlers  
 ├── public/
