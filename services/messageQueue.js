@@ -107,9 +107,9 @@ class MessageQueue {
         message: data.message,
         messageId: data.messageId
       };
-      
+
       const job = await this.privateMessageQueue.add('send-private-message', cleanData, {
-        delay: 1000 // 1 second delay to prevent spam
+        delay: data.delay || 500
       });
       return { jobId: job.id };
     } catch (error) {
@@ -142,9 +142,9 @@ class MessageQueue {
         message: data.message,
         messageId: data.messageId
       };
-      
+
       const job = await this.groupMessageQueue.add('send-group-message', cleanData, {
-        delay: 1000 // 1 second delay to prevent spam
+        delay: data.delay || 500
       });
       return { jobId: job.id };
     } catch (error) {
@@ -185,7 +185,7 @@ class MessageQueue {
           await this.dbService.updateMessageStatus(data.messageId, 'failed');
         }
       }
-    }, 1000);
+    }, data.delay || 500);
 
     return { success: true, method: 'in-memory' };
   }

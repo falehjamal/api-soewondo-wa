@@ -39,13 +39,28 @@ describe('API endpoints', () => {
     expect(res.statusCode).toBe(401);
   });
 
-  test('POST /api/send-private queues message', async () => {
+  test('POST /api/send-private queues message with default delay', async () => {
     const res = await request(app)
       .post('/api/send-private')
       .send({ apiKey: 'key', number: '123', message: 'hi' });
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.message).toBe('Private message queued successfully');
+    expect(messageQueue.addPrivateMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ delay: 500 })
+    );
+  });
+
+  test('POST /api/send-private queues message with custom delay', async () => {
+    const res = await request(app)
+      .post('/api/send-private')
+      .send({ apiKey: 'key', number: '123', message: 'hi', delay: 2000 });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.message).toBe('Private message queued successfully');
+    expect(messageQueue.addPrivateMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ delay: 2000 })
+    );
   });
 
   test('POST /api/send-group requires API key', async () => {
@@ -55,13 +70,28 @@ describe('API endpoints', () => {
     expect(res.statusCode).toBe(401);
   });
 
-  test('POST /api/send-group queues message', async () => {
+  test('POST /api/send-group queues message with default delay', async () => {
     const res = await request(app)
       .post('/api/send-group')
       .send({ apiKey: 'key', groupId: 'group1', message: 'hi' });
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.message).toBe('Group message queued successfully');
+    expect(messageQueue.addGroupMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ delay: 500 })
+    );
+  });
+
+  test('POST /api/send-group queues message with custom delay', async () => {
+    const res = await request(app)
+      .post('/api/send-group')
+      .send({ apiKey: 'key', groupId: 'group1', message: 'hi', delay: 2000 });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.message).toBe('Group message queued successfully');
+    expect(messageQueue.addGroupMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ delay: 2000 })
+    );
   });
 });
 
