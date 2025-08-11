@@ -69,7 +69,7 @@ module.exports = (whatsappService, messageQueue) => {
 
   // Send private message
   router.post('/send-private', validateApiKey, async (req, res) => {
-    const { number, message, delay } = req.body;
+    const { number, message } = req.body;
 
     if (!number || !message) {
       return res.status(400).json({
@@ -92,7 +92,7 @@ module.exports = (whatsappService, messageQueue) => {
         number,
         message,
         messageId,
-        delay: parseInt(delay) || 500
+        delay: parseInt(process.env.DELAY_QUEUE) || 500
       });
 
       res.json({
@@ -115,7 +115,7 @@ module.exports = (whatsappService, messageQueue) => {
 
   // Send group message
   router.post('/send-group', validateApiKey, async (req, res) => {
-    const { groupId, message, delay } = req.body;
+    const { groupId, message } = req.body;
 
     if (!groupId || !message) {
       return res.status(400).json({
@@ -138,7 +138,7 @@ module.exports = (whatsappService, messageQueue) => {
         groupId,
         message,
         messageId,
-        delay: parseInt(delay) || 500
+        delay: parseInt(process.env.DELAY_QUEUE) || 500
       });
 
       res.json({

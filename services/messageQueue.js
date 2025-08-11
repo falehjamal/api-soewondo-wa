@@ -109,7 +109,7 @@ class MessageQueue {
       };
 
       const job = await this.privateMessageQueue.add('send-private-message', cleanData, {
-        delay: data.delay || 500
+        delay: data.delay !== undefined ? data.delay : (parseInt(process.env.DELAY_QUEUE) || 500)
       });
       return { jobId: job.id };
     } catch (error) {
@@ -144,7 +144,7 @@ class MessageQueue {
       };
 
       const job = await this.groupMessageQueue.add('send-group-message', cleanData, {
-        delay: data.delay || 500
+        delay: data.delay !== undefined ? data.delay : (parseInt(process.env.DELAY_QUEUE) || 500)
       });
       return { jobId: job.id };
     } catch (error) {
@@ -185,7 +185,7 @@ class MessageQueue {
           await this.dbService.updateMessageStatus(data.messageId, 'failed');
         }
       }
-    }, data.delay || 500);
+    }, data.delay !== undefined ? data.delay : (parseInt(process.env.DELAY_QUEUE) || 500));
 
     return { success: true, method: 'in-memory' };
   }

@@ -12,7 +12,7 @@ class SimpleMessageQueue {
   }
 
   async addPrivateMessage(data) {
-    const { delay = 500, ...rest } = data;
+    const { delay = parseInt(process.env.DELAY_QUEUE) || 500, ...rest } = data;
     this.queue.push({
       type: 'private',
       data: rest,
@@ -28,7 +28,7 @@ class SimpleMessageQueue {
   }
 
   async addGroupMessage(data) {
-    const { delay = 500, ...rest } = data;
+    const { delay = parseInt(process.env.DELAY_QUEUE) || 500, ...rest } = data;
     this.queue.push({
       type: 'group',
       data: rest,

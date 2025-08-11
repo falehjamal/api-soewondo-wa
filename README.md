@@ -25,6 +25,7 @@ Atur variabel lingkungan sesuai kebutuhan:
 | `PORT`       | `3000`    | Port server HTTP       |
 | `REDIS_HOST` | `localhost` | Host Redis            |
 | `REDIS_PORT` | `6379`    | Port Redis             |
+| `DELAY_QUEUE`| `500`     | Jeda antar pesan (ms)  |
 
 Saat pertama kali berjalan, database akan membuat API key bawaan `tes123`.
 
@@ -48,9 +49,9 @@ Buka `http://localhost:PORT` untuk memindai QR dan menghubungkan akun WhatsApp.
 | GET    | `/api/messages`    | Riwayat pesan (butuh API key, opsi `limit`) |
 | GET    | `/api/queue-stats` | Statistik antrean pesan (butuh API key) |
 
-`send-private` dan `send-group` mendukung parameter opsional `delay` dalam milidetik
-untuk mengatur jeda eksekusi pesan pada antrean. Jika tidak diberikan, nilai
-default adalah `500` ms.
+`send-private` dan `send-group` akan menjeda eksekusi pesan sesuai nilai
+`DELAY_QUEUE` (milidetik). Jika variabel ini tidak disetel, nilai default adalah
+`500` ms.
 
 ## Testing
 ```bash
