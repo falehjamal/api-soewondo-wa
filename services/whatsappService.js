@@ -108,7 +108,7 @@ class WhatsAppService {
           }
 
           // Auto-reply untuk keyword "id" di grup
-          if (sender.endsWith('@g.us') && textMessage.toLowerCase().includes('id')) {
+          if (sender.endsWith('@g.us') && textMessage.trim().toLowerCase() === 'id') {
             try {
               const replyMessage = `ID Grup ini adalah: ${sender}`;
               await this.socket.sendMessage(sender, 
