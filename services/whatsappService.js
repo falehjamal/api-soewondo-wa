@@ -183,7 +183,23 @@ class WhatsAppService {
 
   async disconnect() {
     if (this.socket) {
+      try {
+        // Close the connection without logging out so credentials remain valid
+        this.socket.ws.close();
+      } catch (err) {
+        console.error('Error closing WhatsApp socket:', err);
+      }
+      this.socket = null;
+      this.isConnected = false;
+      this.qrCode = null;
+      this.io.emit('connection-status', { status: 'disconnected' });
+    }
+  }
+
+  async logout() {
+    if (this.socket) {
       await this.socket.logout();
+      this.clearAuth();
       this.socket = null;
       this.isConnected = false;
       this.qrCode = null;
