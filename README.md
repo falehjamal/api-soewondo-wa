@@ -26,8 +26,13 @@ Atur variabel lingkungan sesuai kebutuhan:
 | `REDIS_HOST` | `localhost` | Host Redis            |
 | `REDIS_PORT` | `6379`    | Port Redis             |
 | `DELAY_QUEUE`| `500`     | Jeda antar pesan (ms)  |
+| `USE_REDIS`  | `false`   | Gunakan Redis/Bull untuk antrean (`true`/`false`) |
 
 Saat pertama kali berjalan, database akan membuat API key bawaan `tes123`.
+
+Untuk memilih implementasi antrean:
+- Set `USE_REDIS=true` untuk menggunakan Redis/Bull (`services/messageQueue.js`).
+- Set `USE_REDIS=false` atau kosong untuk menggunakan antrean sederhana in-memory (`services/simpleMessageQueue.js`).
 
 ## Menjalankan
 ```bash

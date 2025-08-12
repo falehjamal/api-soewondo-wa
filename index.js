@@ -7,6 +7,7 @@ const path = require('path');
 const WhatsAppService = require('./services/whatsappService');
 const DatabaseService = require('./services/databaseService');
 const SimpleMessageQueue = require('./services/simpleMessageQueue');
+const RedisMessageQueue = require('./services/messageQueue');
 const apiRoutes = require('./routes/api');
 
 const app = express();
@@ -25,7 +26,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Initialize services
 const dbService = new DatabaseService();
-const messageQueue = new SimpleMessageQueue();
+const useRedisQueue = String(process.env.USE_REDIS || '').toLowerCase() === 'true';
+const messageQueue = useRedisQueue ? new RedisMessageQueue() : new SimpleMessageQueue();
+console.log(`Message queue selected: ${useRedisQueue ? 'Redis/Bull' : 'In-memory (SimpleMessageQueue)'}`);
 const whatsappService = new WhatsAppService(io, dbService);
 
 // Initialize database first

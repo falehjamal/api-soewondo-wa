@@ -196,7 +196,7 @@ module.exports = (whatsappService, messageQueue) => {
   });
 
   // Get queue statistics
-  router.get('/queue-stats', validateApiKey, async (req, res) => {
+  router.get('/queue-stats', async (req, res) => {
     try {
       const stats = await messageQueue.getQueueStats();
       res.json({
