@@ -100,22 +100,23 @@ class MessageQueue {
       return this.processInMemory('private', data);
     }
 
+    // Determine delay once so it's available in both try/catch scopes
+    const resolvedDelay = data.delay !== undefined ? data.delay : (parseInt(process.env.DELAY_QUEUE) || 500);
     try {
-      const delay = data.delay !== undefined ? data.delay : (parseInt(process.env.DELAY_QUEUE) || 500);
 
       // Clean data to avoid circular references and include delay info
       const cleanData = {
         number: data.number,
         message: data.message,
         messageId: data.messageId,
-        delay
+        delay: resolvedDelay
       };
 
       const job = await this.privateMessageQueue.add('send-private-message', cleanData);
       return { jobId: job.id };
     } catch (error) {
       console.error('Error adding private message to queue:', error);
-      return this.processInMemory('private', { ...data, delay });
+      return this.processInMemory('private', { ...data, delay: resolvedDelay });
     }
   }
 
@@ -136,22 +137,22 @@ class MessageQueue {
       return this.processInMemory('group', data);
     }
 
+    const resolvedDelay = data.delay !== undefined ? data.delay : (parseInt(process.env.DELAY_QUEUE) || 500);
     try {
-      const delay = data.delay !== undefined ? data.delay : (parseInt(process.env.DELAY_QUEUE) || 500);
 
       // Clean data to avoid circular references and include delay info
       const cleanData = {
         groupId: data.groupId,
         message: data.message,
         messageId: data.messageId,
-        delay
+        delay: resolvedDelay
       };
 
       const job = await this.groupMessageQueue.add('send-group-message', cleanData);
       return { jobId: job.id };
     } catch (error) {
       console.error('Error adding group message to queue:', error);
-      return this.processInMemory('group', { ...data, delay });
+      return this.processInMemory('group', { ...data, delay: resolvedDelay });
     }
   }
 
