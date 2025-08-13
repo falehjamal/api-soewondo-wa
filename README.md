@@ -12,6 +12,12 @@ Layanan API sederhana untuk mengirim pesan WhatsApp dengan antrean menggunakan B
 - Node.js 16 atau lebih baru.
 - Redis server (opsional; akan fallback ke memori jika Redis tidak tersedia).
 
+## Keamanan
+- **API Key**: Gunakan API key yang kuat di produksi, bukan `tes123` default.
+- **CORS**: Atur `ALLOWED_ORIGINS` untuk membatasi domain yang dapat mengakses API.
+- **Rate Limiting**: Pertimbangkan menambahkan rate limiting untuk mencegah abuse.
+- **Input Validation**: Semua input sudah divalidasi dan disanitasi untuk mencegah SQL injection.
+
 ## Instalasi
 ```bash
 npm install
@@ -20,13 +26,15 @@ npm install
 ## Konfigurasi
 Atur variabel lingkungan sesuai kebutuhan:
 
-| Variable     | Default    | Keterangan             |
-|--------------|-----------|------------------------|
-| `PORT`       | `3000`    | Port server HTTP       |
-| `REDIS_HOST` | `localhost` | Host Redis            |
-| `REDIS_PORT` | `6379`    | Port Redis             |
-| `DELAY_QUEUE`| `500`     | Jeda antar pesan (ms)  |
-| `USE_REDIS`  | `false`   | Gunakan Redis/Bull untuk antrean (`true`/`false`) |
+| Variable           | Default                                    | Keterangan                                    |
+|--------------------|--------------------------------------------|-----------------------------------------------|
+| `PORT`             | `3000`                                     | Port server HTTP                              |
+| `USE_REDIS`        | `false`                                    | Gunakan Redis/Bull untuk antrean (`true`/`false`) |
+| `ALLOWED_ORIGINS`  | `http://localhost:3000,http://localhost:3001` | Domain yang diizinkan untuk CORS (pisahkan dengan koma) |
+| `DELAY_QUEUE`      | `500`                                      | Jeda antar pesan (ms)                         |
+| `MAX_QUEUE_SIZE`   | `1000`                                     | Maksimum ukuran antrean in-memory             |
+| `REDIS_HOST`       | `localhost`                                | Host Redis (jika USE_REDIS=true)              |
+| `REDIS_PORT`       | `6379`                                     | Port Redis (jika USE_REDIS=true)              |
 
 Saat pertama kali berjalan, database akan membuat API key bawaan `tes123`.
 

@@ -79,12 +79,21 @@ class DatabaseService {
 
   async saveSession(whatsappId, name) {
     return new Promise((resolve, reject) => {
+      // Validate and sanitize inputs
+      if (!whatsappId) {
+        return reject(new Error('WhatsApp ID is required'));
+      }
+      
+      // Sanitize inputs to prevent potential issues
+      const sanitizedWhatsappId = String(whatsappId).substring(0, 100);
+      const sanitizedName = name ? String(name).substring(0, 100) : 'Unknown';
+      
       const sql = `
         INSERT OR REPLACE INTO sessions (whatsapp_id, name, updated_at) 
         VALUES (?, ?, CURRENT_TIMESTAMP)
       `;
       
-      this.db.run(sql, [whatsappId, name], function(err) {
+      this.db.run(sql, [sanitizedWhatsappId, sanitizedName], function(err) {
         if (err) {
           reject(err);
         } else {
@@ -96,12 +105,23 @@ class DatabaseService {
 
   async logMessage(jid, message, type, status = 'pending') {
     return new Promise((resolve, reject) => {
+      // Validate and sanitize inputs
+      if (!jid || !message || !type) {
+        return reject(new Error('Missing required parameters'));
+      }
+      
+      // Truncate message if too long to prevent potential issues
+      const sanitizedMessage = String(message).substring(0, 1000);
+      const sanitizedJid = String(jid).substring(0, 100);
+      const sanitizedType = String(type).substring(0, 50);
+      const sanitizedStatus = String(status || 'pending').substring(0, 50);
+      
       const sql = `
         INSERT INTO messages (jid, message, type, status) 
         VALUES (?, ?, ?, ?)
       `;
       
-      this.db.run(sql, [jid, message, type, status], function(err) {
+      this.db.run(sql, [sanitizedJid, sanitizedMessage, sanitizedType, sanitizedStatus], function(err) {
         if (err) {
           reject(err);
         } else {

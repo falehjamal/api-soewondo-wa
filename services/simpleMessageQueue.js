@@ -4,6 +4,8 @@ class SimpleMessageQueue {
     this.processing = false;
     this.whatsappService = null;
     this.dbService = null;
+    this.maxQueueSize = parseInt(process.env.MAX_QUEUE_SIZE) || 1000; // Prevent memory leaks
+    this.droppedMessages = 0; // Track dropped messages for monitoring
   }
 
   setServices(whatsappService, dbService) {
@@ -13,6 +15,18 @@ class SimpleMessageQueue {
 
   async addPrivateMessage(data) {
     const { delay = parseInt(process.env.DELAY_QUEUE) || 500, ...rest } = data;
+    
+    // Check queue size limit to prevent memory leaks
+    if (this.queue.length >= this.maxQueueSize) {
+      this.droppedMessages++;
+      console.warn(`Queue full (${this.maxQueueSize}), dropping message. Total dropped: ${this.droppedMessages}`);
+      return { 
+        success: false, 
+        method: 'simple-queue',
+        error: 'Queue is full, message dropped'
+      };
+    }
+    
     this.queue.push({
       type: 'private',
       data: rest,
@@ -29,6 +43,18 @@ class SimpleMessageQueue {
 
   async addGroupMessage(data) {
     const { delay = parseInt(process.env.DELAY_QUEUE) || 500, ...rest } = data;
+    
+    // Check queue size limit to prevent memory leaks
+    if (this.queue.length >= this.maxQueueSize) {
+      this.droppedMessages++;
+      console.warn(`Queue full (${this.maxQueueSize}), dropping message. Total dropped: ${this.droppedMessages}`);
+      return { 
+        success: false, 
+        method: 'simple-queue',
+        error: 'Queue is full, message dropped'
+      };
+    }
+    
     this.queue.push({
       type: 'group',
       data: rest,
@@ -116,7 +142,9 @@ class SimpleMessageQueue {
         waiting: this.queue.filter(item => item.type === 'group').length 
       },
       processing: this.processing,
-      method: 'simple-queue'
+      method: 'simple-queue',
+      maxQueueSize: this.maxQueueSize,
+      droppedMessages: this.droppedMessages
     };
   }
 
