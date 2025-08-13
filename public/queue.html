@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Monitoring Antrean</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 20px; color: #222; }
+    h1 { margin-bottom: 8px; }
+    .header { display: flex; gap: 8px; align-items: center; }
+    .badge { font-size: 12px; background: #f1f1f1; color: #555; padding: 2px 6px; border-radius: 999px; }
+    .controls { margin: 10px 0 12px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    input[type="number"] { width: 90px; padding: 6px; }
+    button { padding: 6px 10px; cursor: pointer; }
+    .filters { margin: 8px 0 14px; display: flex; gap: 8px; align-items: center; }
+    .btn { padding: 6px 10px; border: 1px solid #ddd; background: #fff; border-radius: 6px; cursor: pointer; }
+    .btn.active { background: #0b6bcb; color: #fff; border-color: #0b6bcb; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 8px 10px; border-bottom: 1px solid #eee; text-align: left; vertical-align: top; }
+    th { background: #fafafa; position: sticky; top: 0; z-index: 1; }
+    tbody { display: block; max-height: 65vh; overflow: auto; }
+    thead, tbody tr { display: table; width: 100%; table-layout: fixed; }
+    code { background: #f7f7f7; padding: 2px 4px; border-radius: 4px; }
+    .state { font-weight: 600; }
+    .state.active { color: #0b6bcb; }
+    .state.completed { color: #1a7f37; }
+    .state.failed { color: #b42318; }
+    .chev { width: 28px; height: 28px; border: 1px solid #ddd; background: #fff; border-radius: 4px; padding: 0; line-height: 1; font-size: 14px; }
+    .details { background: #fbfbfb; }
+    .details pre { margin: 6px 0 0; max-height: 280px; overflow: auto; }
+  </style>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    let socket;
+    let subscribed = false;
+    let allRows = [];
+    let currentFilter = 'all'; // all | active | failed | completed
+    const openKeys = new Set();
+    let currentLimit = 50;
+
+    function formatTs(ts) {
+      if (!ts) return '-';
+      try { return new Date(ts).toLocaleString(); } catch { return String(ts); }
+    }
+    function shorten(v) {
+      const s = typeof v === 'string' ? v : JSON.stringify(v);
+      return s.length > 120 ? s.slice(0,120) + '…' : s;
+    }
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
+    }
+    function setFilter(f) {
+      currentFilter = f;
+      document.querySelectorAll('.filters .btn').forEach(b => b.classList.toggle('active', b.dataset.f === f));
+      render();
+    }
+    function toRows(details) {
+      const rows = [];
+      const add = (queue, state, arr) => (arr || []).forEach(j => rows.push({
+        queue, state,
+        id: j.id,
+        name: j.name,
+        attempts: j.attemptsMade,
+        enqueuedAt: j.timestamp || j.enqueuedAt,
+        processedOn: j.processedOn,
+        finishedOn: j.finishedOn,
+        failedReason: j.failedReason,
+        data: j.data || {}
+      }));
+      add('private', 'waiting', details.private.waiting);
+      add('private', 'active', details.private.active);
+      add('private', 'completed', details.private.completed);
+      add('private', 'failed', details.private.failed);
+      add('group', 'waiting', details.group.waiting);
+      add('group', 'active', details.group.active);
+      add('group', 'completed', details.group.completed);
+      add('group', 'failed', details.group.failed);
+      return rows;
+    }
+    function render() {
+      const tbody = document.getElementById('rows');
+      let rows = allRows;
+      if (currentFilter !== 'all') rows = rows.filter(r => r.state === currentFilter);
+      // Urut terbaru di atas berdasarkan enqueuedAt
+      rows.sort((a,b) => (b.enqueuedAt || 0) - (a.enqueuedAt || 0));
+      const html = rows.map(r => {
+        const key = `${r.queue}:${r.state}:${r.id}`;
+        const isOpen = openKeys.has(key);
+        const arrow = isOpen ? '▼' : '▶';
+        const dataTitle = shorten(r.data.message || r.data);
+        const mainRow = `
+          <tr>
+            <td><button class="chev" data-key="${key}" onclick="toggleRow(event)">${arrow}</button></td>
+            <td class="state ${r.state}">${r.state}</td>
+            <td>${r.data.number || r.data.groupId || '-'}</td>
+            <td title='${escapeHtml(dataTitle)}'>${escapeHtml(shorten(r.data.message || ''))}</td>
+            <td>${formatTs(r.enqueuedAt)}</td>
+            <td>${formatTs(r.processedOn)}</td>
+            <td>${formatTs(r.finishedOn)}</td>
+          </tr>`;
+        const detailRow = !isOpen ? '' : `
+          <tr class="details">
+            <td colspan="7"><strong>Detail</strong>
+              &nbsp; <button onclick="retryJob('${r.queue}','${r.id}')">Repeat</button>
+              <pre>${escapeHtml(JSON.stringify({
+                state: r.state,
+                data: r.data,
+                enqueuedAt: r.enqueuedAt,
+                processedOn: r.processedOn,
+                finishedOn: r.finishedOn
+              }, null, 2))}</pre>
+            </td>
+          </tr>`;
+        return mainRow + detailRow;
+      }).join('');
+      tbody.innerHTML = html || `<tr><td colspan="7">Tidak ada data</td></tr>`;
+    }
+    function apply(details) {
+      document.getElementById('method').textContent = details.method;
+      allRows = toRows(details);
+      render();
+    }
+    function start() {
+      if (subscribed) return;
+      subscribed = true;
+      // Pakai interval 1 detik, sertakan limit
+      socket.emit('subscribe-queue', { intervalMs: 1000, limit: currentLimit });
+    }
+    function toggleRow(e) {
+      const key = e?.target?.dataset?.key || e?.currentTarget?.dataset?.key;
+      if (!key) return;
+      if (openKeys.has(key)) openKeys.delete(key); else openKeys.add(key);
+      render();
+    }
+    function stop() {
+      if (!subscribed) return;
+      subscribed = false;
+      socket.emit('unsubscribe-queue');
+    }
+    function applyLimit() {
+      const val = Number(document.getElementById('limit').value) || 50;
+      currentLimit = Math.max(1, Math.min(500, val));
+      if (subscribed) {
+        // Restart subscription with new limit
+        socket.emit('unsubscribe-queue');
+        subscribed = false;
+        start();
+      }
+    }
+    function retryJob(queue, id) {
+      socket.emit('queue:retry', { queue, id });
+    }
+    window.addEventListener('DOMContentLoaded', () => {
+      socket = io();
+      socket.on('connect', () => start());
+      socket.on('queue:update', apply);
+      socket.on('queue:error', (e) => console.warn(e?.message || 'queue error'));
+      // default active filter: all
+      setFilter('all');
+    });
+  </script>
+</head>
+<body>
+  <div class="header">
+    <h1>Monitoring Antrean</h1>
+    <span class="badge">Metode: <span id="method">-</span></span>
+  </div>
+  <div class="controls">
+    <label>Interval (ms): <input id="interval" type="number" min="1000" max="10000" value="1000" readonly/></label>
+    <label>Limit rows: <input id="limit" type="number" min="1" max="500" value="50" oninput="applyLimit()"/></label>
+    <button onclick="start()">Mulai</button>
+    <button onclick="stop()">Berhenti</button>
+  </div>
+  <div class="filters">
+    <button class="btn" data-f="all" onclick="setFilter('all')">Semua</button>
+    <button class="btn" data-f="active" onclick="setFilter('active')">Proses</button>
+    <button class="btn" data-f="failed" onclick="setFilter('failed')">Gagal</button>
+    <button class="btn" data-f="completed" onclick="setFilter('completed')">Completed</button>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th></th>
+        <th>Status</th>
+        <th>Tujuan</th>
+        <th>Pesan</th>
+        <th>Enqueued</th>
+        <th>Processed</th>
+        <th>Finished</th>
+      </tr>
+    </thead>
+    <tbody id="rows"></tbody>
+  </table>
+</body>
+</html>
+
+

@@ -1,41 +1,22 @@
 <?php
-function apiWaNew($id, $pesan, $isGroup = false)
-{
-    $url = $isGroup 
-        ? 'http://10.0.108.248:3000/api/send-group' 
-        : 'http://10.0.108.248:3000/api/send-private';
-
-    $fieldKey = $isGroup ? 'groupId' : 'number';
-
-    $payload = [
-        'apiKey' => 'tes123',
-        $fieldKey => $id,
-        'message' => $pesan,
+function apiWaNew($id, $pesan, $isGroup = false) {
+    $url = 'http://localhost:3000/api/' . ($isGroup ? 'send-group' : 'send-private');
+    $data = [
+        'apiKey'  => 'tes123',
+        $isGroup ? 'groupId' : 'number' => $id,
+        'message' => $pesan
     ];
-
     $ch = curl_init($url);
-
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'Content-Type: application/json'
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST           => true,
+        CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
+        CURLOPT_POSTFIELDS     => json_encode($data)
     ]);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-
-    $response = curl_exec($ch);
-
-    if (curl_errno($ch)) {
-        return 'Curl error: ' . curl_error($ch);
-    }
-
+    $res = curl_exec($ch);
     curl_close($ch);
-
-    return $response;
+    return $res ?: 'Curl error: ' . curl_error($ch);
 }
 
-
-// Kirim ke nomor pribadi
 echo apiWaNew('6285281411550', 'Halo dari dunia nyata!');
-
-// Kirim ke grup
 echo apiWaNew('120363403933067028', 'Halo grup keren!', true);

@@ -36,7 +36,7 @@ Content-Type: application/json
 
 {
     "apiKey": "tes123",
-    "groupId": "120363169750068863",
+    "groupId": "120363403933067028",
     "message": "Halo, ini adalah pesan grup."
 }
 

@@ -340,6 +340,126 @@ class MessageQueue {
     }
   }
 
+  async getQueueDetails(limit = 50) {
+    // Provide detailed lists of jobs in each state for both queues
+    if (this.useInMemory) {
+      const toItem = (m) => ({
+        id: m.timestamp,
+        type: m.type,
+        data: m.data,
+        enqueuedAt: m.timestamp
+      });
+      return {
+        method: 'in-memory',
+        private: {
+          waiting: this.pendingMessages.filter(m => m.type === 'private').slice(0, limit).map(toItem),
+          active: [],
+          completed: [],
+          failed: []
+        },
+        group: {
+          waiting: this.pendingMessages.filter(m => m.type === 'group').slice(0, limit).map(toItem),
+          active: [],
+          completed: [],
+          failed: []
+        }
+      };
+    }
+
+    if (!this.privateMessageQueue || !this.groupMessageQueue) {
+      return {
+        method: 'redis-initializing',
+        private: { waiting: [], active: [], completed: [], failed: [] },
+        group: { waiting: [], active: [], completed: [], failed: [] }
+      };
+    }
+
+    const mapJob = (job) => {
+      if (!job) return null;
+      const safeData = job.data
+        ? {
+            ...job.data,
+            message:
+              typeof job.data.message === 'string'
+                ? job.data.message.substring(0, 120)
+                : job.data.message
+          }
+        : undefined;
+      return {
+        id: job.id,
+        name: job.name,
+        attemptsMade: job.attemptsMade,
+        timestamp: job.timestamp,
+        processedOn: job.processedOn,
+        finishedOn: job.finishedOn,
+        failedReason: job.failedReason,
+        data: safeData
+      };
+    };
+
+    try {
+      const [
+        pWaiting, pActive, pCompleted, pFailed,
+        gWaiting, gActive, gCompleted, gFailed
+      ] = await Promise.all([
+        this.privateMessageQueue.getWaiting(),
+        this.privateMessageQueue.getActive(),
+        this.privateMessageQueue.getCompleted(),
+        this.privateMessageQueue.getFailed(),
+        this.groupMessageQueue.getWaiting(),
+        this.groupMessageQueue.getActive(),
+        this.groupMessageQueue.getCompleted(),
+        this.groupMessageQueue.getFailed()
+      ]);
+
+      const toSafe = (arr) => (Array.isArray(arr) ? arr.filter(Boolean) : []);
+      return {
+        method: 'redis',
+        private: {
+          waiting: toSafe(pWaiting).slice(0, limit).map(mapJob).filter(Boolean),
+          active: toSafe(pActive).slice(0, limit).map(mapJob).filter(Boolean),
+          completed: toSafe(pCompleted).slice(0, limit).map(mapJob).filter(Boolean),
+          failed: toSafe(pFailed).slice(0, limit).map(mapJob).filter(Boolean)
+        },
+        group: {
+          waiting: toSafe(gWaiting).slice(0, limit).map(mapJob).filter(Boolean),
+          active: toSafe(gActive).slice(0, limit).map(mapJob).filter(Boolean),
+          completed: toSafe(gCompleted).slice(0, limit).map(mapJob).filter(Boolean),
+          failed: toSafe(gFailed).slice(0, limit).map(mapJob).filter(Boolean)
+        }
+      };
+    } catch (error) {
+      console.error('Error getting detailed queue info:', error);
+      return { error: 'Unable to fetch queue details' };
+    }
+  }
+
+  async retryJob(queueType, jobId) {
+    if (this.useInMemory) {
+      throw new Error('Retry not supported in in-memory mode');
+    }
+    if (!this.privateMessageQueue || !this.groupMessageQueue) {
+      throw new Error('Queues not initialized');
+    }
+
+    const isPrivate = queueType === 'private';
+    const queue = isPrivate ? this.privateMessageQueue : this.groupMessageQueue;
+    const job = await queue.getJob(jobId);
+    if (!job) {
+      throw new Error('Job not found');
+    }
+
+    const src = job.data || {};
+    const delay = src.delay !== undefined ? src.delay : (parseInt(process.env.DELAY_QUEUE) || 500);
+    const cleanData = isPrivate
+      ? { number: src.number, message: src.message, messageId: src.messageId, delay }
+      : { groupId: src.groupId, message: src.message, messageId: src.messageId, delay };
+    const name = isPrivate ? 'send-private-message' : 'send-group-message';
+
+    const newJob = await queue.add(name, cleanData);
+    return { newJobId: newJob.id };
+  }
+
   async close() {
     if (!this.useInMemory && this.privateMessageQueue && this.groupMessageQueue) {
       try {
