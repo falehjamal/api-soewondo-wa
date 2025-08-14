@@ -108,6 +108,22 @@ class WhatsAppService {
             console.error('Error logging incoming message:', dbError);
           }
 
+          // Tandai pesan grup sebagai sudah dibaca
+          if (sender.endsWith('@g.us')) {
+            try {
+              if (typeof this.socket.readMessages === 'function') {
+                await this.socket.readMessages([message.key]);
+              } else if (typeof this.socket.sendReadReceipt === 'function') {
+                await this.socket.sendReadReceipt(sender, message.key.participant || sender, [message.key.id]);
+              } else if (typeof this.socket.chatRead === 'function') {
+                // Fallback untuk versi lama
+                await this.socket.chatRead(sender, 'read');
+              }
+            } catch (markErr) {
+              console.error('Error marking group message as read:', markErr);
+            }
+          }
+
           // Auto-reply untuk keyword "id" di grup
           if (sender.endsWith('@g.us') && textMessage.trim().toLowerCase() === 'id') {
             try {
