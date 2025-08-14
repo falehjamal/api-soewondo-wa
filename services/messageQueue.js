@@ -50,8 +50,11 @@ class MessageQueue {
   initializeQueues(redisConfig) {
     try {
       // Create queues only if Redis is available
+      const prefix = process.env.REDIS_PREFIX || 'WA_API';
+      console.log(`Redis/Bull key prefix: ${prefix}`);
       this.privateMessageQueue = new Queue('private messages', {
         redis: redisConfig,
+        prefix,
         defaultJobOptions: {
           removeOnComplete: 100,
           removeOnFail: 50,
@@ -65,6 +68,7 @@ class MessageQueue {
 
       this.groupMessageQueue = new Queue('group messages', {
         redis: redisConfig,
+        prefix,
         defaultJobOptions: {
           removeOnComplete: 100,
           removeOnFail: 50,

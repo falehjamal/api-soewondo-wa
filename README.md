@@ -35,6 +35,7 @@ Atur variabel lingkungan sesuai kebutuhan:
 | `MAX_QUEUE_SIZE`   | `1000`                                     | Maksimum ukuran antrean in-memory             |
 | `REDIS_HOST`       | `localhost`                                | Host Redis (jika USE_REDIS=true)              |
 | `REDIS_PORT`       | `6379`                                     | Port Redis (jika USE_REDIS=true)              |
+| `REDIS_PREFIX`     | `WA_API`                                   | Prefix key Redis/Bull agar tidak bentrok      |
 
 Saat pertama kali berjalan, database akan membuat API key bawaan `tes123`.
 
