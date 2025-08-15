@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp Bot - QR Scanner</title>
+    <title>WhatsApp Bot - API</title>
     <style>
         * {
             margin: 0;
@@ -209,8 +209,8 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🤖 WhatsApp Bot</h1>
-            <p>Scan QR code to connect your WhatsApp</p>
+            <h1>🤖 WhatsApp Bot API</h1>
+            <p>Simple endpoints to send messages</p>
         </div>
 
         <div id="connectionStatus" class="status connecting">
@@ -257,26 +257,6 @@
                 &nbsp;&nbsp;"message": "Hello group!"<br>
                 }
             </div>
-
-            <div class="api-endpoint">
-                <strong>Get Group List:</strong><br>
-                GET http://localhost:3000/api/groups<br>
-                Headers: x-api-key: tes123
-            </div>
-        </div>
-
-        <div class="info-section">
-            <h3>🤖 Auto-Reply Features</h3>
-            <div class="api-endpoint">
-                <strong>Group ID Auto-Reply:</strong><br>
-                Ketik "id" di grup manapun, bot akan membalas dengan ID grup tersebut.<br>
-                Contoh: <em>"Halo, minta id dong"</em> → <em>"ID Grup ini adalah: 120363374154864152@g.us"</em>
-            </div>
-        </div>
-
-        <div class="footer">
-            <p>🔑 Default API Key: <strong>tes123</strong></p>
-            <p>💡 All messages are processed through Redis queue for better performance</p>
         </div>
     </div>
 
