@@ -1,8 +1,9 @@
 const makeWASocket = require('@whiskeysockets/baileys').default;
-const { 
-  DisconnectReason, 
-  useMultiFileAuthState, 
+const {
+  DisconnectReason,
+  useMultiFileAuthState,
   Browsers,
+  fetchLatestBaileysVersion,
   isJidBroadcast,
   isJidGroup,
   jidNormalizedUser
@@ -36,7 +37,11 @@ class WhatsAppService {
     try {
       const { state, saveCreds } = await useMultiFileAuthState(this.authDir);
 
+      const { version, isLatest } = await fetchLatestBaileysVersion();
+      console.log(`Menggunakan versi WhatsApp Web ${version.join('.')} (isLatest=${isLatest})`);
+
       this.socket = makeWASocket({
+        version,
         auth: state,
         printQRInTerminal: false,
         logger: pino({ level: 'silent' }),
@@ -54,16 +59,23 @@ class WhatsAppService {
         }
 
         if (connection === 'close') {
-          const shouldReconnect = (lastDisconnect?.error)?.output?.statusCode !== DisconnectReason.loggedOut;
-          console.log('Connection closed due to ', lastDisconnect?.error, ', reconnecting ', shouldReconnect);
+          const error = lastDisconnect?.error;
+          const statusCode = error?.output?.statusCode;
+          const reasonCode = error?.data?.reason;
+          const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+          console.log('Connection closed due to ', error, ', reconnecting ', shouldReconnect);
           
           this.isConnected = false;
           this.io.emit('connection-status', { status: 'disconnected' });
           
           // Check if it's a 401 error (session expired)
-          if (lastDisconnect?.error?.output?.statusCode === 401) {
+          if (statusCode === 401) {
             console.log('Session expired, clearing auth and starting fresh...');
 
+            this.clearAuth();
+            setTimeout(() => this.connect(), 5000);
+          } else if (reasonCode === '405') {
+            console.log('Menerima respon 405 dari WhatsApp, membersihkan auth untuk sesi baru...');
             this.clearAuth();
             setTimeout(() => this.connect(), 5000);
           } else if (shouldReconnect) {
